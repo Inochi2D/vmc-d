@@ -23,6 +23,15 @@ unittest{
 /++
 +/
 struct Message {
+    private {
+        bool isEmptyMessage(ref const(ubyte)[] data) {
+            foreach(i, b; data) {
+                if (i == 0 && b == 44) continue;
+                if (b != 0) return false;
+            }
+            return true;
+        }
+    }
     public{
         ///
         this(in ubyte[] message){
@@ -32,6 +41,9 @@ struct Message {
             const(ubyte)[] remaining = message[message.countUntil(0)..$].find!"a!=0";
             
             assert(remaining.length%4 == 0);
+            if (isEmptyMessage(remaining)) {
+                return;
+            }
             
             const(ubyte)[] typeTagString = remaining[1..remaining.countUntil(0)];
             _typeTagString = TypeTagString(typeTagString);
@@ -107,6 +119,7 @@ struct Message {
             import std.algorithm;
             import std.conv;
             import std.array;
+            if (_typeTagString.isEmpty) return [];
             return _typeTagString.content.map!(c => c.to!TypeTag).array;
         }
         

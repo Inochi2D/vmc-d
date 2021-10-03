@@ -1,0 +1,6 @@
+name "vmc-d"
+description "An implementation of the VMC face tracking protocol, based on osc-d"
+authors "tanitta" "Inochi2D Contributors"
+copyright "Copyright © 2016, tanitta & Inochi2D Contributors"
+license "MIT"
+targetType "library"
