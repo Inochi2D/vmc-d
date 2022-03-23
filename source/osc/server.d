@@ -29,7 +29,7 @@ class PullServer {
             const(Message)[] messages;
             size_t l;
             do{
-                ubyte[512] recvRaw;
+                ubyte[1500] recvRaw;
                 l = _socket.receive(recvRaw);
                 if(l>0){
                     messages ~= Packet(recvRaw[0..l]).messages;
@@ -88,7 +88,7 @@ class Server{
         Thread _thread;
         
         void receive(Socket socket){
-            ubyte[512] recvRaw;
+            ubyte[1500] recvRaw;
             while(true){
                 size_t l = socket.receive(recvRaw);
                 _messages.pushMessages(Packet(recvRaw[0..l]).messages);
