@@ -73,7 +73,9 @@ class Server{
         }
 
         void close(){
-            _thread.join;
+            if(_thread && _thread.isRunning) {
+                _thread.join;
+            }
         }
         
         // bool hasMessage()const{
