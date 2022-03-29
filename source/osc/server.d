@@ -59,7 +59,7 @@ class Server{
             _messages = new Messages;
             auto socket = new UdpSocket();
             socket.bind (internetAddress);
-            auto _thread = new Thread(() => receive(socket)).start;
+            _thread = new Thread(() => receive(socket)).start;
         }
         
         ///
@@ -73,7 +73,7 @@ class Server{
         }
 
         void close(){
-            if(_thread && _thread.isRunning) {
+            if(_thread) {
                 _thread.join;
             }
         }
