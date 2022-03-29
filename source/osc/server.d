@@ -46,57 +46,64 @@ class PullServer {
 
 /++
 +/
-class Server{
-    public{
-        ///
-        this(ushort port){
-            this(new InternetAddress ("localhost", port));
-        }
-        
-        ///
-        this(InternetAddress internetAddress){
-            import std.socket;
-            _messages = new Messages;
-            auto socket = new UdpSocket();
-            socket.bind (internetAddress);
-            _thread = new Thread(() => receive(socket)).start;
-        }
-        
-        ///
-        ~this(){
-        }
-
-        const(Message)[] popMessages(){
-            // const(Message) m = _messages[0];
-            // _messages = _messages[1..$];
-            return _messages.popMessages;
-        }
-
-        void close(){
-            if(_thread) {
-                _thread.join;
-            }
-        }
-        
-        // bool hasMessage()const{
-        //     auto numMessages = _messages.length;
-        //
-        //     return _messages.length != 0;
-        // }
-    }//public
-
-    private{
-        Messages _messages;
-        Thread _thread;
-        
-        void receive(Socket socket){
-            ubyte[1500] recvRaw;
-            while(true){
-                size_t l = socket.receive(recvRaw);
+class Server {
+private:
+    bool shouldRun;
+    Messages _messages;
+    Thread _thread;
+    
+    void receive(Socket socket){
+        ubyte[1500] recvRaw;
+        while(shouldRun){
+            ptrdiff_t l = socket.receive(recvRaw);
+            if (l != UdpSocket.ERROR) {
                 _messages.pushMessages(Packet(recvRaw[0..l]).messages);
             }
         }
-    }//private
+    }
+
+public:
+
+    /// Construct a server
+    this(ushort port){
+        this(new InternetAddress ("localhost", port));
+    }
+    
+    ///
+    this(InternetAddress internetAddress){
+        import std.socket;
+        _messages = new Messages;
+        auto socket = new UdpSocket();
+        socket.setOption(SocketOptionLevel.IP, SocketOption.RCVTIMEO, 16);
+        socket.bind (internetAddress);
+
+        shouldRun = true;
+        _thread = new Thread(() => receive(socket));
+        _thread.start();
+    }
+    
+    ///
+    ~this(){
+    }
+
+    const(Message)[] popMessages(){
+        // const(Message) m = _messages[0];
+        // _messages = _messages[1..$];
+        return _messages.popMessages;
+    }
+
+    void close(){
+        if(_thread) {
+            shouldRun = false;
+            _thread.join;
+        }
+    }
+    
+    // bool hasMessage()const{
+    //     auto numMessages = _messages.length;
+    //
+    //     return _messages.length != 0;
+    // }
 }//class Server
 
 /++
