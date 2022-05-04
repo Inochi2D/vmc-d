@@ -74,7 +74,7 @@ public:
         import std.socket;
         _messages = new Messages;
         auto socket = new UdpSocket();
-        socket.setOption(SocketOptionLevel.IP, SocketOption.RCVTIMEO, 16);
+        socket.setOption(SocketOptionLevel.SOCKET, SocketOption.RCVTIMEO, 16);
         socket.bind (internetAddress);
 
         shouldRun = true;
