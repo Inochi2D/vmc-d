@@ -29,7 +29,7 @@ class PullServer {
             const(Message)[] messages;
             size_t l;
             do{
-                ubyte[1500] recvRaw;
+                ubyte[16384] recvRaw;
                 l = _socket.receive(recvRaw);
                 if(l>0){
                     messages ~= Packet(recvRaw[0..l]).messages;
