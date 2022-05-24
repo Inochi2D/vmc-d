@@ -14,7 +14,7 @@ import osc.bundle;
 class PullServer {
     public{
         this(ushort port){
-            this(new InternetAddress ("localhost", port));
+            this(new InternetAddress ("0.0.0.0", port));
         }
 
         ///
@@ -51,8 +51,9 @@ private:
     bool shouldRun;
     Messages _messages;
     Thread _thread;
+    Socket socket;
     
-    void receive(Socket socket){
+    void receive(Socket socket) {
         ubyte[1500] recvRaw;
         while(shouldRun){
             ptrdiff_t l = socket.receive(recvRaw);
@@ -66,14 +67,14 @@ public:
 
     /// Construct a server
     this(ushort port){
-        this(new InternetAddress ("localhost", port));
+        this(new InternetAddress ("0.0.0.0", port));
     }
     
     ///
     this(InternetAddress internetAddress){
         import std.socket;
         _messages = new Messages;
-        auto socket = new UdpSocket();
+        socket = new UdpSocket();
         socket.setOption(SocketOptionLevel.IP, SocketOption.RCVTIMEO, 16);
         socket.bind (internetAddress);
 
@@ -86,9 +87,7 @@ public:
     ~this(){
     }
 
-    const(Message)[] popMessages(){
-        // const(Message) m = _messages[0];
-        // _messages = _messages[1..$];
+    const(Message)[] popMessages() {
         return _messages.popMessages;
     }
 
@@ -97,42 +96,41 @@ public:
             shouldRun = false;
             _thread.join;
         }
+        if (socket) {
+            socket.close();
+        }
     }
-    
-    // bool hasMessage()const{
-    //     auto numMessages = _messages.length;
-    //
-    //     return _messages.length != 0;
-    // }
-}//class Server
+}
 
 /++
 +/
 private class Messages {
-    public{
-        Mutex mtx;
-        this(){
-            mtx = new Mutex();
-        }
-
-        const(Message)[] popMessages(){
-            mtx.lock; scope(exit)mtx.unlock;
-            const(Message)[] result = cast(const(Message)[])(_contents);
-            _contents = [];
-            return result;
-        }
-
-        void pushMessages(const(Message)[] messages){
-            mtx.lock;
-            _contents ~= cast(const(Message)[])messages;
-            mtx.unlock;
-        }
-    }//public
-
-    private{
+private:
         const(Message)[] _contents;
-    }//private
-}//class Messages
+        Mutex mtx;
+
+public:
+    this(){
+        mtx = new Mutex();
+    }
+
+    const(Message)[] popMessages(){
+        mtx.lock; scope(exit)mtx.unlock;
+        const(Message)[] result = cast(const(Message)[])(_contents);
+        _contents = [];
+        return result;
+    }
+
+    void pushMessages(const(Message)[] messages){
+        mtx.lock;
+        _contents ~= cast(const(Message)[])messages;
+        mtx.unlock;
+    }
+
+    size_t length() const {
+        return _contents.length;
+    }
+}
 
 private{
     const(Message)[] messages(in Packet packet){
