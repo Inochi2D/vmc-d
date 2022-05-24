@@ -29,22 +29,21 @@ public:
     this(InternetAddress internetAddress) {
         import std.socket;
         _socket = new UdpSocket();
+        _socket.setOption(SocketOptionLevel.SOCKET, SocketOption.RCVTIMEO, 16);
         _socket.bind (internetAddress);
         recvBuffer = new ubyte[ushort.max];
     }
 
+    /**
+        Attempts to recieve data from the socket
+        If no data is recieved for 16 milliseconds this function returns empty-handed.
+    */
     const(Message)[] receive() {
-        const(Message)[] messages;
-        size_t l;
-
-        do {
-            l = _socket.receive(recvBuffer);
-            if(l>0) {
-                messages ~= Packet(recvBuffer[0..l]).messages;
-            }
-        } while(l>0);
-        
-        return messages;
+        ptrdiff_t l = _socket.receive(recvBuffer);
+        if( l != UdpSocket.ERROR ) {
+            return Packet(recvBuffer[0..l]).messages;
+        }
+        return null;
     }
 
     void close() {
@@ -84,7 +83,7 @@ public:
         _messages = new Messages;
         socket = new UdpSocket();
         recvBuffer = new ubyte[ushort.max];
-        socket.setOption(SocketOptionLevel.IP, SocketOption.RCVTIMEO, 16);
+        socket.setOption(SocketOptionLevel.SOCKET, SocketOption.RCVTIMEO, 16);
         socket.bind (internetAddress);
 
         shouldRun = true;
