@@ -12,37 +12,45 @@ import osc.bundle;
 /++
 +/
 class PullServer {
-    public{
-        this(ushort port){
-            this(new InternetAddress ("0.0.0.0", port));
-        }
+private:
+    UdpSocket _socket;
+    ubyte[] recvBuffer;
 
-        ///
-        this(InternetAddress internetAddress){
-            import std.socket;
-            _socket = new UdpSocket();
-            _socket.bind (internetAddress);
-        }
+public:
+    ~this() {
+        close();
+    }
 
-        const(Message)[] receive(){
-            // while(true){
-            const(Message)[] messages;
-            size_t l;
-            do{
-                ubyte[1500] recvRaw;
-                l = _socket.receive(recvRaw);
-                if(l>0){
-                    messages ~= Packet(recvRaw[0..l]).messages;
-                }
-            }while(l>0);
-            return messages;
-        }
-    }//public
+    this(ushort port) {
+        this(new InternetAddress ("0.0.0.0", port));
+    }
 
-    private{
-        UdpSocket _socket;
-    }//private
-}//class PullServer
+    ///
+    this(InternetAddress internetAddress) {
+        import std.socket;
+        _socket = new UdpSocket();
+        _socket.bind (internetAddress);
+        recvBuffer = new ubyte[ushort.max];
+    }
+
+    const(Message)[] receive() {
+        const(Message)[] messages;
+        size_t l;
+
+        do {
+            l = _socket.receive(recvBuffer);
+            if(l>0) {
+                messages ~= Packet(recvBuffer[0..l]).messages;
+            }
+        } while(l>0);
+        
+        return messages;
+    }
+
+    void close() {
+        _socket.close();
+    }
+}
 
 /++
 +/
@@ -52,13 +60,13 @@ private:
     Messages _messages;
     Thread _thread;
     Socket socket;
+    ubyte[] recvBuffer;
     
     void receive(Socket socket) {
-        ubyte[1500] recvRaw;
-        while(shouldRun){
-            ptrdiff_t l = socket.receive(recvRaw);
+        while(shouldRun) {
+            ptrdiff_t l = socket.receive(recvBuffer);
             if (l != UdpSocket.ERROR) {
-                _messages.pushMessages(Packet(recvRaw[0..l]).messages);
+                _messages.pushMessages(Packet(recvBuffer[0..l]).messages);
             }
         }
     }
@@ -66,15 +74,16 @@ private:
 public:
 
     /// Construct a server
-    this(ushort port){
+    this(ushort port) {
         this(new InternetAddress ("0.0.0.0", port));
     }
     
     ///
-    this(InternetAddress internetAddress){
+    this(InternetAddress internetAddress) {
         import std.socket;
         _messages = new Messages;
         socket = new UdpSocket();
+        recvBuffer = new ubyte[ushort.max];
         socket.setOption(SocketOptionLevel.IP, SocketOption.RCVTIMEO, 16);
         socket.bind (internetAddress);
 
@@ -84,14 +93,15 @@ public:
     }
     
     ///
-    ~this(){
+    ~this() {
+        close();
     }
 
     const(Message)[] popMessages() {
         return _messages.popMessages;
     }
 
-    void close(){
+    void close() {
         if(_thread) {
             shouldRun = false;
             _thread.join;
@@ -110,18 +120,18 @@ private:
         Mutex mtx;
 
 public:
-    this(){
+    this() {
         mtx = new Mutex();
     }
 
-    const(Message)[] popMessages(){
+    const(Message)[] popMessages() {
         mtx.lock; scope(exit)mtx.unlock;
         const(Message)[] result = cast(const(Message)[])(_contents);
         _contents = [];
         return result;
     }
 
-    void pushMessages(const(Message)[] messages){
+    void pushMessages(const(Message)[] messages) {
         mtx.lock;
         _contents ~= cast(const(Message)[])messages;
         mtx.unlock;
@@ -133,25 +143,25 @@ public:
 }
 
 private{
-    const(Message)[] messages(in Packet packet){
+    const(Message)[] messages(in Packet packet) {
         const(Message)[] list;
-        if(packet.hasMessage){
+        if(packet.hasMessage) {
             list ~= packet.message;
         }
-        if(packet.hasBundle){
+        if(packet.hasBundle) {
             list = messagesRecur(packet.bundle);
         }
         return list;
         
     }
     
-    const(Message)[] messagesRecur(in Bundle bundle){
+    const(Message)[] messagesRecur(in Bundle bundle) {
         const(Message)[] list;
         foreach (ref element; bundle.elements) {
-            if(element.hasMessage){
+            if(element.hasMessage) {
                 list ~= element.message;
             }
-            if(element.hasBundle){
+            if(element.hasBundle) {
                 list ~= element.bundle.messagesRecur;
             }
         }
