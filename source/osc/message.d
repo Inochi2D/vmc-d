@@ -91,7 +91,7 @@ struct Message {
         string toString()const
         in{
             assert(_args.length > 0);
-        }body{
+        }do{
             return _opCast!string();
         }
         
