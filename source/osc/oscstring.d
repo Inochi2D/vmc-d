@@ -53,7 +53,7 @@ struct OscString(char P){
             assert(str != "");
         }out{
             assert(_data.length%4 == 0);
-        }body{
+        }do{
             import std.conv;
             import std.algorithm;
             import std.array;
@@ -72,7 +72,7 @@ struct OscString(char P){
             import std.algorithm;
             // assert(!arr.canFind(null));
             assert(arr.length > 0);
-        }body{
+        }do{
             if(Prefix != '\0'){
                 import std.conv;
                 _data = Prefix.to!ubyte ~ _data;
