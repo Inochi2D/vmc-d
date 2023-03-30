@@ -7,6 +7,7 @@ import core.sync.mutex;
 import osc.message;
 import osc.packet;
 import osc.bundle;
+import std.datetime : msecs;
 
 
 /++
@@ -29,7 +30,7 @@ public:
     this(InternetAddress internetAddress) {
         import std.socket;
         _socket = new UdpSocket();
-        _socket.setOption(SocketOptionLevel.SOCKET, SocketOption.RCVTIMEO, 16);
+        _socket.setOption(SocketOptionLevel.SOCKET, SocketOption.RCVTIMEO, 16.msecs);
         _socket.bind (internetAddress);
         recvBuffer = new ubyte[ushort.max];
     }
@@ -83,7 +84,7 @@ public:
         _messages = new Messages;
         socket = new UdpSocket();
         recvBuffer = new ubyte[ushort.max];
-        socket.setOption(SocketOptionLevel.SOCKET, SocketOption.RCVTIMEO, 16);
+        socket.setOption(SocketOptionLevel.SOCKET, SocketOption.RCVTIMEO, 16.msecs);
         socket.bind (internetAddress);
 
         shouldRun = true;
